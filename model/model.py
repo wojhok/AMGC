@@ -33,7 +33,7 @@ class AMGCModel(nn.Module):
         super().__init__()
         self.resnet = models.resnet18(weights=ResNet18_Weights.DEFAULT)
         self.resnet.fc = nn.Sequential(
-            nn.Linear(self.model.fc.in_features, 512),
+            nn.Linear(self.resnet.fc.in_features, 512),
             nn.ReLU(),
             nn.Linear(512, 256),
             nn.Dropout(0.5),
@@ -45,7 +45,7 @@ class AMGCModel(nn.Module):
         self.gru_fc = nn.Linear(in_features=512, out_features=256)
         self.combine = nn.Sequential(nn.Dropout(0.5), nn.Linear(512, num_classes))
 
-    def forward(self, x: torch.Tenor):
+    def forward(self, x: torch.Tensor):
         """
         Defines the forward pass of the AMGCModel.
 
@@ -92,7 +92,7 @@ class Reshape(nn.Module):
         super().__init__()
         self.shape = shape
 
-    def forward(self, x: torch.Tenor):
+    def forward(self, x: torch.Tensor):
         """
         Reshapes the input tensor to the specified shape.
 
