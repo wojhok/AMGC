@@ -4,6 +4,7 @@ import argparse
 import random
 
 import torch
+from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 
 from model.model import AMGCModel
@@ -22,12 +23,11 @@ def set_device():
     return device
 
 
-
 def main(images_dir: str) -> None:
     """Main function.
 
     Args:
-        images_dir (str): Path to an directory containing images. 
+        images_dir (str): Path to an directory containing images.
     """
     device = set_device()
     model = AMGCModel(num_classes=10)
@@ -38,8 +38,9 @@ def main(images_dir: str) -> None:
     valid, test = train_test_split(temp, test_size=0.5)
     train_dataset = DatasetGTZAN(train)
     valid_dataset = DatasetGTZAN(valid)
-    test_dataset = DatasetGTZAN(test)
-
+    _ = DatasetGTZAN(test)
+    train_dataloader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    valid_dataloader = DataLoader(valid_dataset, batch_size=64, shuffle=False)
 
 
 if __name__ == "__main__":
