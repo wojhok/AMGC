@@ -1,8 +1,18 @@
 """Module for trainers."""
-import torch
-from torch.utils.data import DataLoader
-import torch.optim as optim
+import logging
 
+import torch
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from torchmetrics.classification import Precision
+
+
+logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger(__name__)
+
+# Set the default log level to INFO
+logger.setLevel(logging.INFO)
 
 class Trainer:
     """Stores functionalities connected with process of training and validating model."""
@@ -14,6 +24,7 @@ class Trainer:
         criterion: torch.nn.Module,
         optimizer: optim.Optimizer,
         device: torch.device,
+        num_classes: int
     ):
         self.model = model
         self.train_loader = train_loader
@@ -21,6 +32,7 @@ class Trainer:
         self.criterion = criterion
         self.optimizer = optimizer
         self.device = device
+        self.num_classes = num_classes
 
     def train(self, num_epochs: int):
         """Manages process of training functions for given number of epochs.
@@ -49,9 +61,13 @@ class Trainer:
     def validate(self):
         """Manages process of validation trained model."""
         self.model.eval()
-
+        precision = Precision(task="multiclass", num_classes=self.num_classes, average="macro")
         with torch.no_grad():
             for images, labels in self.val_loader:
                 images, labels = images.to(self.device), labels.to(self.device)
                 outputs = self.model(images)
-                # TODO: finish implementation
+                predicted = torch.argmax(outputs, dim=1)
+                targets = torch.argmax(outputs, dim=1)
+                precision.update(predicted, targets)
+        precision_score = precision.compute()
+        logger.info("Precision: %.2f", precision_score)

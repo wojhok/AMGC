@@ -30,9 +30,9 @@ def main(images_dir: str) -> None:
         images_dir (str): Path to an directory containing images.
     """
     device = set_device()
+    data = load_filenames_and_labels_gtzan(images_dir)
     model = AMGCModel(num_classes=10)
     model.to(device)
-    data = load_filenames_and_labels_gtzan(images_dir)
     random.shuffle(data)
     train, temp = train_test_split(data, test_size=0.3)
     valid, test = train_test_split(temp, test_size=0.5)
@@ -41,7 +41,6 @@ def main(images_dir: str) -> None:
     _ = DatasetGTZAN(test)
     train_dataloader = DataLoader(train_dataset, batch_size=64, shuffle=True)
     valid_dataloader = DataLoader(valid_dataset, batch_size=64, shuffle=False)
-
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
