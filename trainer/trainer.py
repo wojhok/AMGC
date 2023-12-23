@@ -14,8 +14,10 @@ logger = logging.getLogger(__name__)
 # Set the default log level to INFO
 logger.setLevel(logging.INFO)
 
+
 class Trainer:
     """Stores functionalities connected with process of training and validating model."""
+
     def __init__(
         self,
         model: torch.nn.Module,
@@ -24,7 +26,7 @@ class Trainer:
         criterion: torch.nn.Module,
         optimizer: optim.Optimizer,
         device: torch.device,
-        num_classes: int
+        num_classes: int,
     ):
         self.model = model
         self.train_loader = train_loader
@@ -51,17 +53,21 @@ class Trainer:
                 loss = self.criterion(outputs, labels)
                 loss.backward()
                 self.optimizer.step()
-
                 total_loss = loss.item()
 
             avg_loss = total_loss / len(self.train_loader)
+            logging.info(
+                "Epoch: %s/%s, Train Loss: %.4f", epoch + 1, num_epochs, avg_loss
+            )
 
-            print(f"Epoch: {epoch+1}/{num_epochs}, Train Loss: {avg_loss:.4f}")
+            self.validate()
 
     def validate(self):
         """Manages process of validation trained model."""
         self.model.eval()
-        precision = Precision(task="multiclass", num_classes=self.num_classes, average="macro")
+        precision = Precision(
+            task="multiclass", num_classes=self.num_classes, average="macro"
+        )
         with torch.no_grad():
             for images, labels in self.val_loader:
                 images, labels = images.to(self.device), labels.to(self.device)

@@ -4,9 +4,11 @@ from typing import Tuple
 
 import torch
 from torch.utils.data import Dataset
+from torchvision.transforms import v2
 from sklearn.preprocessing import LabelBinarizer
 from PIL import Image
 
+from dataloaders.transforms import EmptyTransform
 
 def load_filenames_and_labels_gtzan(images_dir: str):
     """Loads filenames and labels for gtzan dataset.
@@ -32,11 +34,16 @@ def load_filenames_and_labels_gtzan(images_dir: str):
 class DatasetGTZAN(Dataset):
     """Class for loading gtzan dataset."""
 
-    def __init__(self, filenames_and_labels: Tuple[str, str]) -> None:
+    def __init__(
+        self,
+        filenames_and_labels: Tuple[str, str],
+        transforms = v2.Compose([EmptyTransform()])
+        ) -> None:
         super().__init__()
         self.filepaths, self.labels = zip(*filenames_and_labels)
         lb = LabelBinarizer()
         self.labels = torch.from_numpy(lb.fit_transform(self.labels))
+        self.transforms = transforms
 
     def __len__(self):
         return len(self.labels)
@@ -44,6 +51,7 @@ class DatasetGTZAN(Dataset):
     def __getitem__(self, index):
         label = self.labels[index]
         image = self.load_image(index)
+        image = self.transforms(image)
         return image, label
 
     def load_image(self, idx: int):
@@ -56,5 +64,7 @@ class DatasetGTZAN(Dataset):
             torch.tensor: Loaded image.
         """
         image = Image.open(self.filepaths[idx])
-        image = torch.from_numpy(image)
+        image = image.convert("RGB")
+        to_tensor = v2.ToTensor()
+        image = to_tensor(image)
         return image

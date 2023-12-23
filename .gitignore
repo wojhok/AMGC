@@ -1,3 +1,4 @@
+*.pyc
 .vscode/settings.json
 inspect_data.ipynb
 model/__pycache__
