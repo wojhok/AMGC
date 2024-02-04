@@ -13,6 +13,7 @@ from sklearn.model_selection import train_test_split
 from model.model import AMGCModel
 from dataloaders.dataset import DatasetGTZAN, load_filenames_and_labels_gtzan
 from trainer.trainer import Trainer
+from callbacks.early_stopping import EarlyStopping
 
 
 
@@ -52,8 +53,20 @@ def main(images_dir: str, image_shape: Tuple[int, int]) -> None:
     criterion = torch.nn.CrossEntropyLoss()
     learning_rate = 0.001
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    trainer = Trainer(model, train_dataloader, valid_dataloader, criterion, optimizer, device, 10)
-    trainer.train(10)
+    early_stop_callback = EarlyStopping(10, "val/precision")
+    callbacks = [early_stop_callback]
+    trainer = Trainer(
+        model,
+        train_dataloader,
+        valid_dataloader,
+        criterion,
+        optimizer,
+        device,
+        10,
+        100,
+        callbacks=callbacks
+    )
+    trainer.train(50)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

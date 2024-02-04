@@ -3,6 +3,7 @@ This module defines the AMGCModel, a neural network architecture that combines a
 feature extractor with a GRU (Gated Recurrent Unit) layer for advanced image and sequential data
 processing. The model is designed to handle complex tasks that require understanding both spatial
 features (via ResNet) and temporal dynamics (via GRU)."""
+
 import torch
 import torch.nn as nn
 from torchvision import models
@@ -37,7 +38,7 @@ class AMGCModel(nn.Module):
             nn.ReLU(),
             nn.Linear(512, 256),
             nn.Dropout(0.5),
-            nn.BatchNorm2d(256),
+            nn.BatchNorm1d(256),  # Changed from BatchNorm2d to BatchNorm1d
         )
         self.gru = nn.GRU(
             input_size=224, hidden_size=256, num_layers=1, bidirectional=True

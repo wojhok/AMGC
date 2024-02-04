@@ -65,6 +65,6 @@ class DatasetGTZAN(Dataset):
         """
         image = Image.open(self.filepaths[idx])
         image = image.convert("RGB")
-        to_tensor = v2.ToTensor()
+        to_tensor = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
         image = to_tensor(image)
         return image
