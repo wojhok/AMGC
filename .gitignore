@@ -5,3 +5,4 @@ model/__pycache__
 runs
 trainer/__pycache__
 callbacks/__pycache__
+results
