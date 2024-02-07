@@ -71,7 +71,7 @@ class Trainer:
             images, labels = images.to(self.device), labels.to(self.device)
             self.optimizer.zero_grad()
             outputs = self.model(images)
-            loss = self.criterion(outputs, labels.argmax(dim=1))
+            loss = self.criterion(outputs, labels)
             loss.backward()
             self.optimizer.step()
             total_loss = loss.item()
@@ -101,7 +101,7 @@ class Trainer:
                 images, labels = images.to(self.device), labels.to(self.device)
                 outputs = self.model(images)
                 predicted = torch.argmax(outputs, dim=1)
-                targets = torch.argmax(labels, dim=1)
+                targets = labels
                 precision.update(predicted, targets)
         precision_score = precision.compute()
         self.writer.add_scalar("Precision/val", precision_score.item(), epoch)
