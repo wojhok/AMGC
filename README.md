@@ -20,4 +20,6 @@ dataset/
 ```
 ## Running training
 
-python main.py -id PATH_TO_DATASET_DIR -is IMAGE_HEIGHT_VALUE IMAGE_WIDTH_VALUE  
+```bash
+python main.py -id PATH_TO_DATASET_DIR -is IMAGE_HEIGHT_VALUE IMAGE_WIDTH_VALUE
+```
