@@ -18,8 +18,13 @@ dataset/
         ...
     ...
 ```
+
 ## Running training
 
+Before running training set parameters inside [train_config.yaml](configs/train_config.yml).
+
+To start training run command:
+
 ```bash
-python main.py -id PATH_TO_DATASET_DIR -is IMAGE_HEIGHT_VALUE IMAGE_WIDTH_VALUE
+python main.py -y PATH_TO_CONFIG_YAML
 ```

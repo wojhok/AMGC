@@ -1,0 +1,13 @@
+# dataset params
+dataset_path: PATH_TO_DATASET
+num_classes: 10
+image_width: 224
+image_height: 224
+
+# Training params
+epochs: 100
+learning_rate: 0.01
+batch_size: 16
+optimizer: adam
+patience: 10
+early_stopping_metric: val/precision

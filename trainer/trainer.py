@@ -42,14 +42,14 @@ class Trainer:
         self.num_epochs = num_epochs
         self.logs = {}
 
-    def train(self, num_epochs: int):
+    def train(self):
         """Manages process of training functions for given number of epochs.
 
         Args:
             num_epochs (int): Number of epochs.
         """
         self._execute_callbacks("on_train_begin")
-        for epoch in range(num_epochs):
+        for epoch in range(self.num_epochs):
             self.logs = {"epoch": epoch}
             self._execute_callbacks("on_epoch_begin", epoch, self.logs)
             metrics = self._train_one_epoch(epoch)

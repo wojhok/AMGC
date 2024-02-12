@@ -2,10 +2,10 @@
 
 import logging
 import argparse
-from typing import Tuple
+from typing import Any, Dict
 
+import yaml
 import torch
-from torch import optim
 from torch.utils.data import DataLoader, random_split
 from torchvision.transforms import v2
 from torchvision import datasets
@@ -13,6 +13,7 @@ from torchvision import datasets
 from model.model import AMGCModel
 from trainer.trainer import Trainer
 from callbacks.early_stopping import EarlyStopping
+from utils.param_by_name import get_optimizer
 
 
 def set_device():
@@ -26,21 +27,33 @@ def set_device():
     logging.info(" Device: %s", device)
     return device
 
+def load_config(config_path: str):
+    """Loads config for training.
 
-def main(images_dir: str, image_shape: Tuple[int, int]) -> None:
+    Args:
+        config_path (str): Path to config file.
+
+    Returns:
+        Dict: Configuration for training.
+    """
+    with open(config_path, 'r', encoding="utf-8") as file:
+        config = yaml.safe_load(file)
+    return config
+
+def main(config: Dict[str, Any]) -> None:
     """Main function.
 
     Args:
-        images_dir (str): Path to an directory containing images.
-        image_shape (Tuple[int, int]): Shape of image for nn.
+        config (Dict[str, Any]): Dictionary that contains training configuration.
     """
     device = set_device()
-    model = AMGCModel(num_classes=10)
+    model = AMGCModel(num_classes=config["num_classes"])
     model.to(device)
+    image_shape = config["image_width"], config["image_height"]
     basic_transforms = v2.Compose(
         [v2.Resize(image_shape), v2.ToImage(), v2.ToDtype(torch.float32, scale=True)]
     )
-    dataset = datasets.ImageFolder(root=images_dir, transform=basic_transforms)
+    dataset = datasets.ImageFolder(root=config["dataset_path"], transform=basic_transforms)
     total_size = len(dataset)
     train_size = int(total_size * 0.7)
     val_size = int(total_size * 0.15)
@@ -48,12 +61,12 @@ def main(images_dir: str, image_shape: Tuple[int, int]) -> None:
     train_dataset, val_dataset, _ = random_split(
         dataset, [train_size, val_size, test_size]
     )
-    train_dataloader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    valid_dataloader = DataLoader(val_dataset, batch_size=64, shuffle=False)
+    train_dataloader = DataLoader(train_dataset, batch_size=config["batch_size"], shuffle=True)
+    valid_dataloader = DataLoader(val_dataset, batch_size=config["batch_size"], shuffle=False)
     criterion = torch.nn.CrossEntropyLoss()
-    learning_rate = 0.001
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    early_stop_callback = EarlyStopping(10, "val/precision")
+    learning_rate = config["learning_rate"]
+    optimizer = get_optimizer(config["optimizer"], model.parameters(), learning_rate)
+    early_stop_callback = EarlyStopping(config["patience"], config["early_stopping_metric"])
     callbacks = [early_stop_callback]
     trainer = Trainer(
         model,
@@ -62,21 +75,17 @@ def main(images_dir: str, image_shape: Tuple[int, int]) -> None:
         criterion,
         optimizer,
         device,
-        10,
-        100,
-        callbacks=callbacks,
+        config["num_classes"],
+        config["epochs"],
+        callbacks=callbacks
     )
-    trainer.train(50)
+    trainer.train()
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     argument_parser = argparse.ArgumentParser()
-    argument_parser.add_argument(
-        "-id", "--images-dir", help="Path to root_dir of images."
-    )
-    argument_parser.add_argument(
-        "-is", "--images-size", nargs=2, help="Path to root_dir of images.", type=int
-    )
+    argument_parser.add_argument("-y", "--yaml", help="Path to config yaml file.")
     args = argument_parser.parse_args()
-    main(args.images_dir, args.images_size)
+    config_params = load_config(args.yaml)
+    main(config_params)
