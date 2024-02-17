@@ -1,5 +1,5 @@
 # dataset params
-dataset_path: PATH_TO_DATASET
+dataset_path: PATH_TO_DATASET # Replace with actual path or use environment variable
 num_classes: 10
 image_width: 224
 image_height: 224

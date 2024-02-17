@@ -7,3 +7,4 @@ trainer/__pycache__
 callbacks/__pycache__
 results
 .vscode
+configs/train_config_actual.yml
