@@ -28,3 +28,13 @@ To start training run command:
 ```bash
 python main.py -y PATH_TO_CONFIG_YAML
 ```
+
+## Running tuning
+
+Before running tuning set parameters inside [tune_config.yaml](configs/tune_config.yml).
+
+To start training run command:
+
+```bash
+python tune.py -y PATH_TO_CONFIG_YAML
+```

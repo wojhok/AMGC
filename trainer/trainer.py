@@ -7,6 +7,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchmetrics.classification import Precision, Recall, Accuracy, F1Score
+import hyperopt
 from tqdm import tqdm
 
 logging.basicConfig(level=logging.INFO)
@@ -29,7 +30,8 @@ class Trainer:
         device: torch.device,
         num_classes: int,
         num_epochs: int,
-        callbacks=None,
+        callbacks = None,
+        tune = False
     ):
         self.model = model
         self.train_loader = train_loader
@@ -54,6 +56,7 @@ class Trainer:
         self.val_f1_score = F1Score(
             num_classes=num_classes, average="macro", task="multiclass"
         ).to(device)
+        self.tune = tune
 
     def train(self):
         """Manages process of training functions for given number of epochs.
@@ -72,8 +75,12 @@ class Trainer:
                 getattr(callback, "early_stop", True) for callback in self.callbacks
             ):
                 logger.info("STOP TRAINING EARLY DUE TO LACK OF IMPROVEMENT")
+                if self.tune:
+                    return {'loss': self.logs["val/loss"], 'status': hyperopt.STATUS_OK}
                 break
         self._execute_callbacks("on_train_end")
+        if self.tune:
+            return {'loss': self.logs["val/loss"], 'status': hyperopt.STATUS_OK}
 
     def _train_one_epoch(self, epoch):
         self.model.train()

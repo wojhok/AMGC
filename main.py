@@ -4,7 +4,6 @@ import logging
 import argparse
 from typing import Any, Dict
 
-import yaml
 import torch
 from torch.utils.data import DataLoader, random_split
 from torchvision.transforms import v2
@@ -14,31 +13,8 @@ from model.model import AMGCModel
 from trainer.trainer import Trainer
 from callbacks.early_stopping import EarlyStopping
 from utils.param_by_name import get_optimizer
+from utils.set_up_utils import set_device, load_config
 
-
-def set_device():
-    """Checks if torch backend is available."""
-    if torch.backends.mps.is_available():
-        device = torch.device("mps")
-    elif torch.cuda.is_available():
-        device = torch.device("cuda")
-    else:
-        device = torch.device("cpu")
-    logging.info(" Device: %s", device)
-    return device
-
-def load_config(config_path: str):
-    """Loads config for training.
-
-    Args:
-        config_path (str): Path to config file.
-
-    Returns:
-        Dict: Configuration for training.
-    """
-    with open(config_path, 'r', encoding="utf-8") as file:
-        config = yaml.safe_load(file)
-    return config
 
 def main(config: Dict[str, Any]) -> None:
     """Main function.
