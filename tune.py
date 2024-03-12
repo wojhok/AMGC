@@ -62,7 +62,8 @@ def objective(hyperparams: Dict[str, Any]) -> None:
         callbacks=callbacks,
         tune=True
     )
-    trainer.train()
+    result_dict = trainer.train()
+    return result_dict
 
 
 def tune(config: Dict[str, Any]):

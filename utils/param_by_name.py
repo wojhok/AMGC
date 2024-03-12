@@ -1,8 +1,13 @@
 """Module for creating objects of parameters by class."""
-from typing import Iterable
+from typing import Iterable, Dict, Any
+import inspect
 
 import torch
 import torch.optim as optim
+from torch.optim.lr_scheduler import (
+    StepLR, MultiStepLR, ExponentialLR, CosineAnnealingLR,
+    ReduceLROnPlateau, OneCycleLR, CosineAnnealingWarmRestarts
+)
 
 
 def get_optimizer(
@@ -40,3 +45,45 @@ def get_optimizer(
     if optimizer_class is None:
         raise ValueError(f"Optimizer '{optimizer_name}' is not recognized.")
     return optimizer_class(model_params, lr=lr, **kwargs)
+
+
+def get_learning_rate_scheduler(config: Dict[str, Any], optimizer: optim.Optimizer):
+    """Get learning rate scheduler by name and initialize it with the optimizer.
+
+    Args:
+        scheduler_name (Dict[str, Any]): Dictionary containing lr-scheduler and its configuration.
+        optimizer (optim.Optimizer): Optimizer linked with the scheduler.
+
+    Returns:
+        Any: Learning rate scheduler object.
+    """
+    scheduler_config = config.get('scheduler', {})
+    scheduler_type = scheduler_config.get('type')
+
+    # Handle cases where no scheduler is specified or configuration is incomplete
+    if not scheduler_type:
+        raise ValueError(
+            "Scheduler type must be specified in the configuration.")
+
+    # Select scheduler class based on the provided type
+    scheduler_classes = {
+        "StepLR": StepLR,
+        "MultiStepLR": MultiStepLR,
+        "ExponentialLR": ExponentialLR,
+        "CosineAnnealingLR": CosineAnnealingLR,
+        "ReduceLROnPlateau": ReduceLROnPlateau,
+        "OneCycleLR": OneCycleLR,
+        "CosineAnnealingWarmRestarts": CosineAnnealingWarmRestarts
+    }
+    scheduler_class = scheduler_classes.get(scheduler_type)
+    if not scheduler_class:
+        raise ValueError(f"Scheduler '{scheduler_type}' is not recognized.")
+
+    # Filter out 'type' and any other non-relevant keys
+    scheduler_params = {
+        k: v
+        for k, v in scheduler_config.items()
+        if k != "type" and k in inspect.getfullargspec(scheduler_class.__init__).args
+    }
+
+    return scheduler_class(optimizer, **scheduler_params)
