@@ -57,15 +57,15 @@ def get_learning_rate_scheduler(config: Dict[str, Any], optimizer: optim.Optimiz
     Returns:
         Any: Learning rate scheduler object.
     """
-    scheduler_config = config.get('scheduler', {})
+    scheduler_config = {
+        key.replace('scheduler_', ''): value for key, value in config.items() if 'scheduler' in key
+    }
     scheduler_type = scheduler_config.get('type')
 
-    # Handle cases where no scheduler is specified or configuration is incomplete
     if not scheduler_type:
         raise ValueError(
             "Scheduler type must be specified in the configuration.")
 
-    # Select scheduler class based on the provided type
     scheduler_classes = {
         "StepLR": StepLR,
         "MultiStepLR": MultiStepLR,
@@ -79,7 +79,6 @@ def get_learning_rate_scheduler(config: Dict[str, Any], optimizer: optim.Optimiz
     if not scheduler_class:
         raise ValueError(f"Scheduler '{scheduler_type}' is not recognized.")
 
-    # Filter out 'type' and any other non-relevant keys
     scheduler_params = {
         k: v
         for k, v in scheduler_config.items()

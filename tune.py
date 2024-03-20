@@ -11,7 +11,7 @@ from hyperopt import hp, fmin, tpe, Trials
 from model.model import AMGCModel
 from trainer.trainer import Trainer
 from callbacks.early_stopping import EarlyStopping
-from utils.param_by_name import get_optimizer
+from utils.param_by_name import get_optimizer, get_learning_rate_scheduler
 from utils.set_up_utils import set_device, load_config
 
 
@@ -47,6 +47,7 @@ def objective(hyperparams: Dict[str, Any]) -> None:
     learning_rate = hyperparams["learning_rate"]
     optimizer = get_optimizer(
         hyperparams["optimizer"], model.parameters(), learning_rate)
+    lr_scheduler = get_learning_rate_scheduler(hyperparams, optimizer)
     early_stop_callback = EarlyStopping(
         hyperparams["patience"], hyperparams["early_stopping_metric"])
     callbacks = [early_stop_callback]
@@ -65,6 +66,29 @@ def objective(hyperparams: Dict[str, Any]) -> None:
     result_dict = trainer.train()
     return result_dict
 
+def create_search_space(
+    config: Dict[str, Any],
+    search_space: Dict[str, Any],
+    prefix = ""
+    ) -> Dict[str, Any]:
+    """Creates search space.
+
+    Args:
+        config (Dict): Configuration to get params.
+        search_space (Dict): search_space to be filled.
+        prefix (str): Prefix for key name in search_space.
+    Returns:
+        Dict: Filled search_space.
+    """
+    for key, value in config.items():
+        if isinstance(value, Dict):
+            search_space = create_search_space(value, search_space, key)
+            continue
+        if not isinstance(value, List):
+            value = [value]
+        key_to_fill = key if prefix != "" else prefix + "_" + key
+        search_space[key_to_fill] = hp.choice(key, value)
+    return search_space
 
 def tune(config: Dict[str, Any]):
     """
@@ -74,10 +98,7 @@ def tune(config: Dict[str, Any]):
         config (Dict[str, Any]): Dictionary with hyperparameters to optimize.
     """
     search_space = {}
-    for key, value in config.items():
-        if not isinstance(value, List):
-            value = [value]
-        search_space[key] = hp.choice(key, value)
+    search_space = create_search_space(config, search_space)
     best = fmin(
         fn=objective,
         space=search_space,

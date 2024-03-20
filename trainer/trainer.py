@@ -30,6 +30,7 @@ class Trainer:
         device: torch.device,
         num_classes: int,
         num_epochs: int,
+        lr_scheduler: torch.optim.lr_scheduler.LRScheduler,
         callbacks = None,
         tune = False
     ):
@@ -43,6 +44,7 @@ class Trainer:
         self.writer = SummaryWriter()
         self.callbacks = callbacks if callbacks else []
         self.num_epochs = num_epochs
+        self.lr_scheduler = lr_scheduler
         self.logs = {}
         self.val_precision = Precision(
             num_classes=num_classes, average="macro", task="multiclass"
