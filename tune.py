@@ -1,6 +1,8 @@
 """Module that handles hyperparameter optimization."""
 from typing import Dict, Any, List
 import argparse
+import time
+import json
 
 import torch
 from torch.utils.data import random_split, DataLoader
@@ -27,8 +29,7 @@ def objective(hyperparams: Dict[str, Any]) -> None:
     model.to(device)
     image_shape = hyperparams["image_width"], hyperparams["image_height"]
     basic_transforms = v2.Compose(
-        [v2.Resize(image_shape), v2.ToImage(),
-        v2.ToDtype(torch.float32, scale=True)]
+        [v2.Resize(image_shape), v2.ToImage(), v2.ToDtype(torch.float32, scale=True)]
     )
     dataset = datasets.ImageFolder(
         root=hyperparams["dataset_path"], transform=basic_transforms)
@@ -48,8 +49,10 @@ def objective(hyperparams: Dict[str, Any]) -> None:
     optimizer = get_optimizer(
         hyperparams["optimizer"], model.parameters(), learning_rate)
     lr_scheduler = get_learning_rate_scheduler(hyperparams, optimizer)
+    base_save_path = f"./results/tune/model_{int(time.time())}"
     early_stop_callback = EarlyStopping(
-        hyperparams["patience"], hyperparams["early_stopping_metric"])
+        hyperparams["patience"], hyperparams["early_stopping_metric"], base_save_path
+    )
     callbacks = [early_stop_callback]
     trainer = Trainer(
         model,
@@ -60,17 +63,22 @@ def objective(hyperparams: Dict[str, Any]) -> None:
         device,
         hyperparams["num_classes"],
         hyperparams["epochs"],
+        lr_scheduler,
         callbacks=callbacks,
         tune=True
     )
     result_dict = trainer.train()
+    config_save_path = f"{base_save_path}/config.json"
+    with open(config_save_path, 'w', encoding='utf-8') as f:
+        json.dump(hyperparams, f, indent=4)
     return result_dict
+
 
 def create_search_space(
     config: Dict[str, Any],
     search_space: Dict[str, Any],
-    prefix = ""
-    ) -> Dict[str, Any]:
+    prefix=""
+) -> Dict[str, Any]:
     """Creates search space.
 
     Args:
@@ -82,13 +90,15 @@ def create_search_space(
     """
     for key, value in config.items():
         if isinstance(value, Dict):
-            search_space = create_search_space(value, search_space, key)
+            new_prefix = f"{prefix}_{key}" if prefix else key
+            search_space = create_search_space(value, search_space, new_prefix)
             continue
         if not isinstance(value, List):
             value = [value]
-        key_to_fill = key if prefix != "" else prefix + "_" + key
-        search_space[key_to_fill] = hp.choice(key, value)
+        key_to_fill = f"{prefix}_{key}" if prefix else key
+        search_space[key_to_fill] = hp.choice(key_to_fill, value)
     return search_space
+
 
 def tune(config: Dict[str, Any]):
     """
@@ -99,14 +109,18 @@ def tune(config: Dict[str, Any]):
     """
     search_space = {}
     search_space = create_search_space(config, search_space)
+    trials = Trials()
     best = fmin(
         fn=objective,
         space=search_space,
         algo=tpe.suggest,
-        max_evals=100,
-        trials=Trials()
+        max_evals=4,
+        trials=trials
     )
     print(best)
+
+    best_trial = trials.best_trial
+    print(best_trial)
 
 
 if __name__ == "__main__":

@@ -31,8 +31,8 @@ class Trainer:
         num_classes: int,
         num_epochs: int,
         lr_scheduler: torch.optim.lr_scheduler.LRScheduler,
-        callbacks = None,
-        tune = False
+        callbacks=None,
+        tune=False
     ):
         self.model = model
         self.train_loader = train_loader
@@ -72,7 +72,13 @@ class Trainer:
             metrics = self._train_one_epoch(epoch)
             self.logs.update(metrics)
             self.logs['model'] = self.model
+
+            if isinstance(self.lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                self.lr_scheduler.step(self.logs["val/loss"])
+            else:
+                self.lr_scheduler.step()
             self._execute_callbacks("on_epoch_end", epoch, self.logs)
+
             if any(
                 getattr(callback, "early_stop", True) for callback in self.callbacks
             ):

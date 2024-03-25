@@ -18,20 +18,23 @@ class EarlyStopping(Callback):
         metric (str): Name of the metric to be monitored.
         metric_ascending (bool): True if metric improvement is an increase, False if decrease.
         best_metric_val (float): Best value of the monitored metric.
+        save_dir (str): Path to save model file.
         early_stop (bool): Flag to signal that early stopping condition was met.
     
     Parameters:
         patience (int): Number of epochs with no improvement after which training will be stopped.
         metric (str): The metric name to be monitored.
+        save_dir (str): Path to save model file.
         metric_ascending (bool, optional): Specifies if the monitored metric is expected to
             increase (True) or decrease (False). Defaults to True.
     """
-    def __init__(self, patience: int, metric: str, metric_ascending=True):
+    def __init__(self, patience: int, metric: str, save_dir: str, metric_ascending=True):
         self.patience = patience
         self.metric = metric
         self.counter = 0
         self.metric_ascending = metric_ascending
         self.best_metric_val = -np.inf if metric_ascending else np.inf
+        self.save_dir = save_dir
         self.early_stop = False
 
     def on_epoch_end(self, epoch: int, logs=None):
@@ -64,7 +67,7 @@ class EarlyStopping(Callback):
         """
         if model is None:
             return
-        result_directory = os.path.join("results", "best")
+        result_directory = os.path.join(self.save_dir, "results")
         path_to_model_file = os.path.join(result_directory, "best.pt")
         if os.path.exists(result_directory):
             torch.save(model.state_dict(), path_to_model_file)
